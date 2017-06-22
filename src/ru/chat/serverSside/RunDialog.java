@@ -1,4 +1,4 @@
-package ru.chat.serverSside.threads;
+package ru.chat.serverSside;
 
 import ru.chat.markerIface.DialogPacket;
 

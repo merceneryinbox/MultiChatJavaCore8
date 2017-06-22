@@ -35,8 +35,8 @@ public class Client{
 		    ObjectInputStream oisAutor = new ObjectInputStream(socketAuth.getInputStream());
 		    // открываем сокет для общения с сервером диалога
 		    Socket socketDialog = new Socket("localhost", 55555);
-		    ObjectInputStream oiDialog = new ObjectInputStream(socketDialog.getInputStream());
-		    ObjectOutputStream ooDialog = new ObjectOutputStream(socketDialog.getOutputStream())){
+		    ObjectOutputStream ooDialog = new ObjectOutputStream(socketDialog.getOutputStream());
+		    ObjectInputStream oiDialog = new ObjectInputStream(socketDialog.getInputStream())){
 			
 			// запрашиваем логин и пароль
 			System.out.println("Login:");
@@ -51,13 +51,9 @@ public class Client{
 			// ждём ответа от сервера авторизации с номером сессии в виде пакета диалога
 			dialogPackFromAuthorization = (DialogPacket)oisAutor.readObject();
 			// проверяем не забанен ли я (если забанен - тогда в логине будет слово - quit и клиент закрывается
-			String requestAproveName = dialogPackFromAuthorization.getLog();
+			String requestAproveLog = dialogPackFromAuthorization.getLog();
 			
-			if(requestAproveName.equalsIgnoreCase("quit")){
-				bufferedReader.close();
-				oisAutor.close();
-				oosAuthor.close();
-				socketAuth.close();
+			if(requestAproveLog.equalsIgnoreCase("quit")){
 				System.out.println("you are banned");
 				System.out.println("сообщение от сервера авторизации - " + dialogPackFromAuthorization.getMessage());
 				System.exit(- 1);
@@ -66,9 +62,11 @@ public class Client{
 			// во всех остальных случаях если я не забанен продолжаю работу - шлю первый диалоговый пакет диалоговому
 			// серверу предварительно вставив в него номер сессии из пакета от сервера авторизации
 			sessionFromRunAuthorization = dialogPackFromAuthorization.getSessionId();
+			oisAutor.close();
+			oosAuthor.close();
+			socketAuth.close();
 			
-			DialogPacket firstPackToDialog = new DialogPacket(loginInClient, pasInClient,
-			                                                  "first message in session",
+			DialogPacket firstPackToDialog = new DialogPacket(loginInClient, pasInClient, "first message in session",
 			                                                  sessionFromRunAuthorization,
 			                                                  timeStampFromRunAuthorization);
 			ooDialog.writeObject(firstPackToDialog);

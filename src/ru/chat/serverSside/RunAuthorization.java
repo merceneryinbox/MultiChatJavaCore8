@@ -1,4 +1,4 @@
-package ru.chat.serverSside.threads;
+package ru.chat.serverSside;
 
 import ru.chat.markerIface.AuthPacket;
 import ru.chat.markerIface.DialogPacket;
@@ -50,10 +50,10 @@ public class RunAuthorization implements Runnable{
 				"select code from chatpro.users  where upper(login) = upper" + "(?)");
 			// запрос который прописывает юзера в базу данных в таблицу users
 			psSRegistration = connection.prepareStatement(
-				"insert into chatpro.users (login,pass,code) values (?,?) on conflict (login) do nothing;");
+				"insert into chatpro.users (login,pass,code) values (?,?,?) on conflict (login) do nothing;");
 			// запрос который вносит сессию юзера в базу данных в таблицу aprovedsessions для проверки в диалоге
 			pSSesionAprove = connection.prepareStatement(
-				"insert into chatpro.aprovedsessions (login) values(?,timeStampDef) ;");
+				"insert into chatpro.aprovedsessions (login,timestampforsess) values(?,?) ;");
 			
 		} catch(ClassNotFoundException e) {
 			e.printStackTrace();
@@ -94,6 +94,7 @@ public class RunAuthorization implements Runnable{
 			else {
 				sessionassigne();
 				objectOutputStream.writeObject(new DialogPacket("ok", "ok", "ok author", sessionIDd, timeStampDef));
+				//String log, String pass, String message, int sessionId, long timeStampFromDiPa
 				objectOutputStream.flush();
 			}
 			// TODO отсюда реализовать поведение клиента, если он получил -1 тогда сам отключается, если 0 тогда
@@ -122,6 +123,7 @@ public class RunAuthorization implements Runnable{
 		try{
 			psSRegistration.setString(1, l);
 			psSRegistration.setString(2, p);
+			psSRegistration.setInt(3, 0);
 			psSRegistration.executeUpdate();
 			
 			pSCheckRequest.setString(1, l);
@@ -139,6 +141,7 @@ public class RunAuthorization implements Runnable{
 	public void sessionassigne(){
 		try{
 			pSSesionAprove.setString(1, loginFromPacket);
+			pSSesionAprove.setLong(2, timeStampDef);
 			pSSesionAprove.executeUpdate();
 			
 		} catch(SQLException e) {
