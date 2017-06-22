@@ -1,0 +1,39 @@
+<html>
+<head>
+    <h2><b><span style="color : red">Description of MultiChatJavaCore8.</span> </b></h2></header>
+</head>
+<body>
+<header><h2><span style="color : brown">___________Serverside description:</span></h2></header>
+<h2>1.Authirization Server.</h2>
+<h3>Authirization Server starts first and waits for clients connection. When connection accepted it passes socket into
+    separate thread in AuthorizationServer's pool of threads, where this separate thread check and authorize connecting
+client. In the end of it's work RunAuthorization separate thread send DialogPacket to client with result of session start
+attempt.</h3>
+<h2>2.Dialog Server.</h2>
+<h3>
+    Dialog server starts immediately after Authorization server starts. It waits for connection request from clients witch passed
+    authorization in RunAuthorization thread. Dialog server create multiple independent threads one for every connecting
+    client. This independing thread called RunDialog.
+    <h4>2.1 RunDialog.<p>
+
+    </p>
+        RunDialog thread capture first DialogPacket, and check if client with current login has sessionID and check if
+        session is outdated or not. If session outdated RunDialog send DialogPacket with keywor - "quit" to client and
+        close itself. If session is alive RunDialog send DialogPacket to client with keyword - "ok" in login field.
+        Then RunDialog starts it's main loop talking with client. In talking session RunDialog save all received packets
+        into database.
+    </h4>
+</h3>
+
+<header><h2><span style="color : blue">___________Clientside description:</span></h2></header>
+<h3>
+    Clien part starts and try to connect to AuthorizationServer for send him AuthorizationPacet with its login and passwor
+    AuthorizationServer check if client is banned and refuse if so, if not and user are not in base server creat string
+    in DB in table users, and also create string in approvedsessions table for dialog server. After this server send
+    DialogPacket to client and if in this packet client keywor - "quit" - finished its work, in other case create and
+    send to RunDialog first packet with marker - "start session" inside it. Then starts main dialog loop, checking if
+    user type in keyword - "quit" during the dialog, then exiting.
+</h3>
+</body>
+
+</html>

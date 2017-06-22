@@ -12,7 +12,6 @@ import java.util.Date;
  */
 public class Client{
 	private static DialogPacket dialogPackFromAuthorization;
-	private static DialogPacket firstDialogPacket;
 	private static DialogPacket dialogPacketInSessionFromServer;
 	private static DialogPacket dialogPacketInSessionFromUser;
 	private static AuthPacket   authPacket;
@@ -48,6 +47,7 @@ public class Client{
 			authPacket = new AuthPacket(loginInClient, pasInClient);
 			oosAuthor.writeObject(authPacket);
 			oosAuthor.flush();
+			
 			// ждём ответа от сервера авторизации с номером сессии в виде пакета диалога
 			dialogPackFromAuthorization = (DialogPacket)oisAutor.readObject();
 			// проверяем не забанен ли я (если забанен - тогда в логине будет слово - quit и клиент закрывается
@@ -64,19 +64,18 @@ public class Client{
 			}
 			
 			// во всех остальных случаях если я не забанен продолжаю работу - шлю первый диалоговый пакет диалоговому
-			// серверу предварительно вынув номер сессии из пакета от сервера авторизации
+			// серверу предварительно вставив в него номер сессии из пакета от сервера авторизации
 			sessionFromRunAuthorization = dialogPackFromAuthorization.getSessionId();
 			
 			DialogPacket firstPackToDialog = new DialogPacket(loginInClient, pasInClient,
-			                                                  "first message in " + "session",
+			                                                  "first message in session",
 			                                                  sessionFromRunAuthorization,
 			                                                  timeStampFromRunAuthorization);
 			ooDialog.writeObject(firstPackToDialog);
 			ooDialog.flush();
-			
+			//принимаю ответ на первый пакет и вывожу на консоль
 			dialogPacketInSessionFromServer = (DialogPacket)oiDialog.readObject();
 			System.out.println(dialogPacketInSessionFromServer.getMessage());
-			
 			
 			// главный цикл общения
 			while(! socketDialog.isClosed()){
@@ -90,7 +89,6 @@ public class Client{
 				ooDialog.flush();
 				
 				if(message.equalsIgnoreCase("quit")){
-					
 					dialogPacketInSessionFromServer = (DialogPacket)oiDialog.readObject();
 					reply = dialogPacketInSessionFromServer.getMessage();
 					System.out.println("Server replyed" + reply);

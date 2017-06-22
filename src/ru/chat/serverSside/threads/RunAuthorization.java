@@ -32,6 +32,7 @@ public class RunAuthorization implements Runnable{
 	private static String loginFromPacket;
 	private static String pasFromPacket;
 	private static int    backCodeFromDB;
+	private static int    backCode;
 	private static String passFromDB;
 	private static int    sessionIDd;
 	
@@ -49,10 +50,10 @@ public class RunAuthorization implements Runnable{
 				"select code from chatpro.users  where upper(login) = upper" + "(?)");
 			// запрос который прописывает юзера в базу данных в таблицу users
 			psSRegistration = connection.prepareStatement(
-				"insert into chatpro.users (login,pass,code) values (?,?,?) on conflict (login) do nothing;");
+				"insert into chatpro.users (login,pass,code) values (?,?) on conflict (login) do nothing;");
 			// запрос который вносит сессию юзера в базу данных в таблицу aprovedsessions для проверки в диалоге
 			pSSesionAprove = connection.prepareStatement(
-				"insert into chatpro.aprovedsessions (login, timestampforsess) values(?,?) ;");
+				"insert into chatpro.aprovedsessions (login) values(?,timeStampDef) ;");
 			
 		} catch(ClassNotFoundException e) {
 			e.printStackTrace();
@@ -83,41 +84,15 @@ public class RunAuthorization implements Runnable{
 			loginFromPacket = authPacket.getLoin();
 			pasFromPacket = authPacket.getPass();
 			
-			// делаем запрос в базу данных и проверяем есть ли там такой локин, если нет вызываем второй запрос на
-			// добавление нового юзера
-			pSCheckRequest.setString(1, loginFromPacket);
-			resultSetCheck = pSCheckRequest.executeQuery();
-			// перемещаем указатель в результсете на следующую не 0 запись(если такая запись есть)
-			resultSetCheck.next();
-			// присваиваем временной переменной значение пароля из таблицы
-			passFromDB = resultSetCheck.getString("pass");
-			
-			// теперь проверяем нулевой пароль или нет, если нудевой - значит юзера нужно прописать в таблицу
-			// а потом выделить ему сессию, а если пароль не нулевой тогда считываем его code
-			// и проверяем его если он = -1 тогда юзер забанен, что мы ему и сообщаем через соответствующий пакет
-			// а если = 0 - значит статус нормальный и мы просто выделяем ему сессию
-			
-			if(passFromDB.equalsIgnoreCase(null)){
-				authorization(loginFromPacket, pasFromPacket);
-				sessionassigne();
-				objectOutputStream.writeObject(new DialogPacket("ok", "ok", "ok author", sessionIDd, timeStampDef));
-				objectOutputStream.flush();
-			}
-			
-			backCodeFromDB = resultSetCheck.getInt("code");
+			backCodeFromDB = authorization(loginFromPacket, pasFromPacket);
 			
 			if(backCodeFromDB == - 1){
 				objectOutputStream.writeObject(
 					new DialogPacket("quit", "quit", "you are banned", sessionIDd, timeStampDef));
 				objectOutputStream.flush();
-				
 			}
 			else {
-				// всё остальное по дефолту уже зареген и не забанен => реализуем логику - записываем в таблицу сессии
-				// БД логин и таймстемп чтобы диалоговый сервер вычел из своего таймстемпа тот который в базе и если дельта
-				// больше 1 минуты - удалил запись в базе и отключил сокет клиента,
-				authorization(loginFromPacket, pasFromPacket);
-				sessionassigne(); // записыаем в таблицу сессий регистрировавшегося раньше юзера
+				sessionassigne();
 				objectOutputStream.writeObject(new DialogPacket("ok", "ok", "ok author", sessionIDd, timeStampDef));
 				objectOutputStream.flush();
 			}
@@ -127,8 +102,6 @@ public class RunAuthorization implements Runnable{
 		} catch(IOException e) {
 			e.printStackTrace();
 		} catch(ClassNotFoundException e) {
-			e.printStackTrace();
-		} catch(SQLException e) {
 			e.printStackTrace();
 		} finally{
 			try{
@@ -145,22 +118,27 @@ public class RunAuthorization implements Runnable{
 		}
 	}
 	
-	public void authorization(String l, String p){
+	public int authorization(String l, String p){
 		try{
 			psSRegistration.setString(1, l);
 			psSRegistration.setString(2, p);
-			psSRegistration.setInt(3, 0);
 			psSRegistration.executeUpdate();
+			
+			pSCheckRequest.setString(1, l);
+			resultSetCheck = pSCheckRequest.executeQuery();
+			resultSetCheck.next();
+			
+			backCode = resultSetCheck.getInt("code");
 			
 		} catch(SQLException e) {
 			e.printStackTrace();
 		}
+		return backCode;
 	}
 	
 	public void sessionassigne(){
 		try{
 			pSSesionAprove.setString(1, loginFromPacket);
-			pSSesionAprove.setLong(2, timeStampDef);
 			pSSesionAprove.executeUpdate();
 			
 		} catch(SQLException e) {
