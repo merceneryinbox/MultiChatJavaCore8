@@ -44,17 +44,20 @@ public class Client{
 	}
 	
 	public static int authoriseMe(){
-		try(BufferedReader autorizeReader = new BufferedReader(new InputStreamReader(System.in));
+		try(
 		    // открываем сокет для проверки авторизации
 		    Socket socketAuth = new Socket("localhost", 12345);
 		    ObjectOutputStream oosAuthor = new ObjectOutputStream(socketAuth.getOutputStream());
 		    ObjectInputStream oisAutor = new ObjectInputStream(socketAuth.getInputStream())){
 			
+			BufferedReader autorizeReader = new BufferedReader(new InputStreamReader(System.in));
 			// запрашиваем логин и пароль
 			System.out.println("Login:");
 			loginInClient = autorizeReader.readLine();
 			System.out.println("Pass:");
 			pasInClient = autorizeReader.readLine();
+			
+			autorizeReader.close();
 			// фолрмируем пакет авторизации и отправляем запрос делегату сервера для проверки возможности авторизации
 			//String log, String pass, String message, int sessionId, long timeStampFromDiPa
 			authPacket = new DialogPacket(loginInClient, pasInClient,"authorization",0,0);
@@ -64,19 +67,19 @@ public class Client{
 			// ждём ответа от сервера авторизации с номером сессии
 			dialogPackFromAuthorization = (DialogPacket)oisAutor.readObject();
 			// проверяем не забанен ли я (если забанен - тогда в логине будет слово - quit и клиент закрывается
-			String requestAproveLog = dialogPackFromAuthorization.getLog();
+			String requestAproveLog = dialogPackFromAuthorization.log;
 			
 			if(requestAproveLog.equalsIgnoreCase("quit")){
 				System.out.println("you are banned");
-				System.out.println("сообщение от сервера авторизации - " + dialogPackFromAuthorization.getMessage());
+				System.out.println("сообщение от сервера авторизации - " + dialogPackFromAuthorization.message);
 				System.exit(- 1);
 				return - 1;
 			}
 			
 			// во всех остальных случаях если я не забанен продолжаю работу - шлю первый диалоговый пакет диалоговому
 			// серверу предварительно вставив в него номер сессии из пакета от сервера авторизации
-			sessionFromRunAuthorization = dialogPackFromAuthorization.getSessionId();
-			timeStampFromRunAuthorization = dialogPackFromAuthorization.getTimeStampFromDiPa();
+			sessionFromRunAuthorization = dialogPackFromAuthorization.sessionId;
+			timeStampFromRunAuthorization = dialogPackFromAuthorization.timeStampFromDiPa;
 			return 0;
 		} catch(IOException e) {
 			e.printStackTrace();
@@ -102,7 +105,7 @@ public class Client{
 			ooDialog.flush();
 			//принимаю ответ на первый пакет и вывожу на консоль
 			dialogPacketInSessionFromServer = (DialogPacket)oiDialog.readObject();
-			System.out.println(dialogPacketInSessionFromServer.getMessage());
+			System.out.println(dialogPacketInSessionFromServer.message);
 			
 			// главный цикл общения
 			while(! socketDialog.isClosed()){
@@ -117,7 +120,7 @@ public class Client{
 				
 				if(message.equalsIgnoreCase("quit")){
 					dialogPacketInSessionFromServer = (DialogPacket)oiDialog.readObject();
-					reply = dialogPacketInSessionFromServer.getMessage();
+					reply = dialogPacketInSessionFromServer.message;
 					System.out.println("Server replyed" + reply);
 					
 					oiDialog.close();

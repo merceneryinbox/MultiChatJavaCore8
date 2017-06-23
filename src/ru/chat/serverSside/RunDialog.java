@@ -80,11 +80,11 @@ public class RunDialog implements Runnable{
 			dialogPacket = (DialogPacket)objectInputStream.readObject();
 			
 			String ipadress = String.valueOf(socket.getInetAddress());
-			logFromUser = dialogPacket.getLog();
-			messageFromUser = dialogPacket.getMessage();
-			pasFromUser = dialogPacket.getPass();
-			sessionidFromUser = dialogPacket.getSessionId();
-			timeStampFromUser = dialogPacket.getTimeStampFromDiPa();
+			logFromUser = dialogPacket.log;
+			messageFromUser = dialogPacket.message;
+			pasFromUser = dialogPacket.pass;
+			sessionidFromUser = dialogPacket.sessionId;
+			timeStampFromUser = dialogPacket.timeStampFromDiPa;
 			
 			pSControllUserIncom.setString(1, logFromUser);
 			resultSet = pSControllUserIncom.executeQuery();
@@ -133,9 +133,9 @@ public class RunDialog implements Runnable{
 				DialogPacket dialogInLoop = (DialogPacket)objectInputStream.readObject();
 				//распаковываем пакет
 				long   timeStampInSession = new java.util.Date().getTime();
-				String logInLoop          = dialogInLoop.getLog();
-				int    sesInLoop          = dialogInLoop.getSessionId();
-				String mesInLoop          = dialogInLoop.getMessage();
+				String logInLoop          = dialogInLoop.log;
+				int    sesInLoop          = dialogInLoop.sessionId;
+				String mesInLoop          = dialogInLoop.message;
 				
 				// сохраняем пакет в базе данных в таблице истории сообщений
 				pSSaveStoryInSessions.setString(1, logInLoop);
@@ -174,6 +174,7 @@ public class RunDialog implements Runnable{
 			pSSaveFirstPackInUsers.close();
 			connectionDB.close();
 			socket.close();
+			System.exit(0);
 		} catch(IOException e) {
 			e.printStackTrace();
 		} catch(SQLException e) {

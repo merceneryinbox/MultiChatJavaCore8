@@ -78,8 +78,8 @@ public class RunAuthorization implements Runnable{
 			// читаем пакет авторизации от клиента
 			DialogPacket authPacket = (DialogPacket)oIStreamClient.readObject();
 			//вынимаем из него логин и пароль
-			loginFromPacket = authPacket.getLog();
-			pasFromPacket = authPacket.getPass();
+			loginFromPacket = authPacket.log;
+			pasFromPacket = authPacket.pass;
 			
 			backCodeFromDB = authorization(loginFromPacket, pasFromPacket);
 			
