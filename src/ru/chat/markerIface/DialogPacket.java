@@ -7,11 +7,11 @@ import java.io.Serializable;
  */
 public class DialogPacket implements Serializable{
 	public static final long serialVersionUID = 1L;
-	public static String log;
-	public static String pass;
-	public static String message;
-	public static int sessionId;
-	public static long timeStampFromDiPa;
+	public String log;
+	public String pass;
+	public String message;
+	public int sessionId;
+	public long timeStampFromDiPa;
 	
 	public DialogPacket(String log, String pass, String message, int sessionId, long timeStampFromDiPa){
 		

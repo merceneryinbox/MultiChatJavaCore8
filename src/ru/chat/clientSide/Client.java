@@ -14,7 +14,7 @@ public class Client{
 	private static DialogPacket dialogPackFromAuthorization;
 	private static DialogPacket dialogPacketInSessionFromServer;
 	private static DialogPacket dialogPacketInSessionFromUser;
-	private static DialogPacket   authPacket;
+	private static DialogPacket authPacket;
 	
 	private static String message;
 	private static String reply;
@@ -24,15 +24,50 @@ public class Client{
 	private static String loginInClient;
 	private static String pasInClient;
 	
-	public Client(){
-	}
-	
 	public static void main(String[] args){
 		while(untilAuthorize() != 0){
 			untilAuthorize();
 		}
 		
-		talkToMe();
+		while(true){
+			try(// открываем сокет для общения с сервером диалога
+			    BufferedReader talk = new BufferedReader(new InputStreamReader(System.in));
+			    Socket socketDialog = new Socket("localhost", 55555);
+			    ObjectOutputStream ooDialog = new ObjectOutputStream(socketDialog.getOutputStream());
+			    ObjectInputStream oiDialog = new ObjectInputStream(socketDialog.getInputStream())){
+				
+				DialogPacket firstPackToDialog = new DialogPacket(loginInClient, pasInClient, "loop",
+				                                                  sessionFromRunAuthorization,
+				                                                  timeStampFromRunAuthorization);
+				ooDialog.writeObject(firstPackToDialog);
+				ooDialog.flush();
+				//принимаю ответ на первый пакет и вывожу на консоль
+				
+				
+				message = talk.readLine();
+				dialogPacketInSessionFromUser = new DialogPacket(loginInClient, pasInClient, message, sessionIdInClient,
+				                                                 new Date().getTime());
+				ooDialog.writeObject(dialogPacketInSessionFromUser);
+				ooDialog.flush();
+				
+				if(message.equalsIgnoreCase("quit")){
+					dialogPacketInSessionFromServer = (DialogPacket)oiDialog.readObject();
+					reply = dialogPacketInSessionFromServer.message;
+					System.out.println("Server replyed" + reply);
+					break;
+				}
+				if(oiDialog.available() != 0){
+					dialogPacketInSessionFromServer = (DialogPacket)oiDialog.readObject();
+					System.out.println(dialogPacketInSessionFromServer.message);
+				}
+			} catch(UnknownHostException e) {
+				e.printStackTrace();
+			} catch(IOException e) {
+				e.printStackTrace();
+			} catch(ClassNotFoundException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 	
 	private static int untilAuthorize(){
@@ -45,10 +80,10 @@ public class Client{
 	
 	public static int authoriseMe(){
 		try(
-		    // открываем сокет для проверки авторизации
-		    Socket socketAuth = new Socket("localhost", 12345);
-		    ObjectOutputStream oosAuthor = new ObjectOutputStream(socketAuth.getOutputStream());
-		    ObjectInputStream oisAutor = new ObjectInputStream(socketAuth.getInputStream())){
+			// открываем сокет для проверки авторизации
+			Socket socketAuth = new Socket("localhost", 12345);
+			ObjectOutputStream oosAuthor = new ObjectOutputStream(socketAuth.getOutputStream());
+			ObjectInputStream oisAutor = new ObjectInputStream(socketAuth.getInputStream())){
 			
 			BufferedReader autorizeReader = new BufferedReader(new InputStreamReader(System.in));
 			// запрашиваем логин и пароль
@@ -60,7 +95,7 @@ public class Client{
 			autorizeReader.close();
 			// фолрмируем пакет авторизации и отправляем запрос делегату сервера для проверки возможности авторизации
 			//String log, String pass, String message, int sessionId, long timeStampFromDiPa
-			authPacket = new DialogPacket(loginInClient, pasInClient,"authorization",0,0);
+			authPacket = new DialogPacket(loginInClient, pasInClient, "authorization", 0, 0);
 			oosAuthor.writeObject(authPacket);
 			oosAuthor.flush();
 			
@@ -91,49 +126,4 @@ public class Client{
 	}
 	
 	// метод для начала диалога после авторизации с сервером диалога
-	public static void talkToMe(){
-		try(// открываем сокет для общения с сервером диалога
-		    BufferedReader dialogReader = new BufferedReader(new InputStreamReader(System.in));
-		    Socket socketDialog = new Socket("localhost", 55555);
-		    ObjectOutputStream ooDialog = new ObjectOutputStream(socketDialog.getOutputStream());
-		    ObjectInputStream oiDialog = new ObjectInputStream(socketDialog.getInputStream())){
-			
-			DialogPacket firstPackToDialog = new DialogPacket(loginInClient, pasInClient, "first message in session",
-			                                                  sessionFromRunAuthorization,
-			                                                  timeStampFromRunAuthorization);
-			ooDialog.writeObject(firstPackToDialog);
-			ooDialog.flush();
-			//принимаю ответ на первый пакет и вывожу на консоль
-			dialogPacketInSessionFromServer = (DialogPacket)oiDialog.readObject();
-			System.out.println(dialogPacketInSessionFromServer.message);
-			
-			// главный цикл общения
-			while(! socketDialog.isClosed()){
-				
-				System.out.println("type in your message: ");
-				
-				message = dialogReader.readLine();
-				dialogPacketInSessionFromUser = new DialogPacket(loginInClient, pasInClient, message, sessionIdInClient,
-				                                                 new Date().getTime());
-				ooDialog.writeObject(dialogPacketInSessionFromUser);
-				ooDialog.flush();
-				
-				if(message.equalsIgnoreCase("quit")){
-					dialogPacketInSessionFromServer = (DialogPacket)oiDialog.readObject();
-					reply = dialogPacketInSessionFromServer.message;
-					System.out.println("Server replyed" + reply);
-					
-					oiDialog.close();
-					ooDialog.close();
-					socketDialog.close();
-				}
-			}
-		} catch(UnknownHostException e) {
-			e.printStackTrace();
-		} catch(IOException e) {
-			e.printStackTrace();
-		} catch(ClassNotFoundException e) {
-			e.printStackTrace();
-		}
-	}
 }
