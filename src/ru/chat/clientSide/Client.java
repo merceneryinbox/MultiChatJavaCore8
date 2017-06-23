@@ -1,10 +1,10 @@
 package ru.chat.clientSide;
 
-import ru.chat.markerIface.AuthPacket;
 import ru.chat.markerIface.DialogPacket;
 
 import java.io.*;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.Date;
 
 /**
@@ -14,7 +14,7 @@ public class Client{
 	private static DialogPacket dialogPackFromAuthorization;
 	private static DialogPacket dialogPacketInSessionFromServer;
 	private static DialogPacket dialogPacketInSessionFromUser;
-	private static AuthPacket   authPacket;
+	private static DialogPacket   authPacket;
 	
 	private static String message;
 	private static String reply;
@@ -28,27 +28,40 @@ public class Client{
 	}
 	
 	public static void main(String[] args){
-		try(BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
+		while(untilAuthorize() != 0){
+			untilAuthorize();
+		}
+		
+		talkToMe();
+	}
+	
+	private static int untilAuthorize(){
+		int checkBan = authoriseMe();
+		if(checkBan == - 1){
+			return checkBan;
+		}
+		return checkBan;
+	}
+	
+	public static int authoriseMe(){
+		try(BufferedReader autorizeReader = new BufferedReader(new InputStreamReader(System.in));
 		    // открываем сокет для проверки авторизации
 		    Socket socketAuth = new Socket("localhost", 12345);
 		    ObjectOutputStream oosAuthor = new ObjectOutputStream(socketAuth.getOutputStream());
-		    ObjectInputStream oisAutor = new ObjectInputStream(socketAuth.getInputStream());
-		    // открываем сокет для общения с сервером диалога
-		    Socket socketDialog = new Socket("localhost", 55555);
-		    ObjectOutputStream ooDialog = new ObjectOutputStream(socketDialog.getOutputStream());
-		    ObjectInputStream oiDialog = new ObjectInputStream(socketDialog.getInputStream())){
+		    ObjectInputStream oisAutor = new ObjectInputStream(socketAuth.getInputStream())){
 			
 			// запрашиваем логин и пароль
 			System.out.println("Login:");
-			loginInClient = bufferedReader.readLine();
+			loginInClient = autorizeReader.readLine();
 			System.out.println("Pass:");
-			pasInClient = bufferedReader.readLine();
+			pasInClient = autorizeReader.readLine();
 			// фолрмируем пакет авторизации и отправляем запрос делегату сервера для проверки возможности авторизации
-			authPacket = new AuthPacket(loginInClient, pasInClient);
+			//String log, String pass, String message, int sessionId, long timeStampFromDiPa
+			authPacket = new DialogPacket(loginInClient, pasInClient,"authorization",0,0);
 			oosAuthor.writeObject(authPacket);
 			oosAuthor.flush();
 			
-			// ждём ответа от сервера авторизации с номером сессии в виде пакета диалога
+			// ждём ответа от сервера авторизации с номером сессии
 			dialogPackFromAuthorization = (DialogPacket)oisAutor.readObject();
 			// проверяем не забанен ли я (если забанен - тогда в логине будет слово - quit и клиент закрывается
 			String requestAproveLog = dialogPackFromAuthorization.getLog();
@@ -57,14 +70,30 @@ public class Client{
 				System.out.println("you are banned");
 				System.out.println("сообщение от сервера авторизации - " + dialogPackFromAuthorization.getMessage());
 				System.exit(- 1);
+				return - 1;
 			}
 			
 			// во всех остальных случаях если я не забанен продолжаю работу - шлю первый диалоговый пакет диалоговому
 			// серверу предварительно вставив в него номер сессии из пакета от сервера авторизации
 			sessionFromRunAuthorization = dialogPackFromAuthorization.getSessionId();
-			oisAutor.close();
-			oosAuthor.close();
-			socketAuth.close();
+			timeStampFromRunAuthorization = dialogPackFromAuthorization.getTimeStampFromDiPa();
+			return 0;
+		} catch(IOException e) {
+			e.printStackTrace();
+			return - 1;
+		} catch(ClassNotFoundException e) {
+			e.printStackTrace();
+			return - 1;
+		}
+	}
+	
+	// метод для начала диалога после авторизации с сервером диалога
+	public static void talkToMe(){
+		try(// открываем сокет для общения с сервером диалога
+		    BufferedReader dialogReader = new BufferedReader(new InputStreamReader(System.in));
+		    Socket socketDialog = new Socket("localhost", 55555);
+		    ObjectOutputStream ooDialog = new ObjectOutputStream(socketDialog.getOutputStream());
+		    ObjectInputStream oiDialog = new ObjectInputStream(socketDialog.getInputStream())){
 			
 			DialogPacket firstPackToDialog = new DialogPacket(loginInClient, pasInClient, "first message in session",
 			                                                  sessionFromRunAuthorization,
@@ -80,7 +109,7 @@ public class Client{
 				
 				System.out.println("type in your message: ");
 				
-				message = bufferedReader.readLine();
+				message = dialogReader.readLine();
 				dialogPacketInSessionFromUser = new DialogPacket(loginInClient, pasInClient, message, sessionIdInClient,
 				                                                 new Date().getTime());
 				ooDialog.writeObject(dialogPacketInSessionFromUser);
@@ -94,13 +123,10 @@ public class Client{
 					oiDialog.close();
 					ooDialog.close();
 					socketDialog.close();
-					
-					oisAutor.close();
-					oosAuthor.close();
-					socketAuth.close();
-					System.exit(0);
 				}
 			}
+		} catch(UnknownHostException e) {
+			e.printStackTrace();
 		} catch(IOException e) {
 			e.printStackTrace();
 		} catch(ClassNotFoundException e) {

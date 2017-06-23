@@ -23,13 +23,13 @@ public class RunDialog implements Runnable{
 	private static ResultSet    resultSet;
 	private static long         timeStampfromDB;
 	private static long         timeStampServerDialog;
-	private static long         timeStampFromUser;
+	private static long         deltaTime;
 	private static DialogPacket dialogPacket;
 	private static String       messageFromUser;
 	private static String       logFromUser;
 	private static String       pasFromUser;
 	private static int          sessionidFromUser;
-	private        int          sessionidFromBase;
+	private static long         timeStampFromUser;
 	
 	String dbDriver = "org.postgresql.Driver";
 	String urlDB    = "jdbc:postgresql://localhost:5432/chatPro";
@@ -81,21 +81,22 @@ public class RunDialog implements Runnable{
 			
 			String ipadress = String.valueOf(socket.getInetAddress());
 			logFromUser = dialogPacket.getLog();
-			pasFromUser = dialogPacket.getPass();
 			messageFromUser = dialogPacket.getMessage();
+			pasFromUser = dialogPacket.getPass();
 			sessionidFromUser = dialogPacket.getSessionId();
 			timeStampFromUser = dialogPacket.getTimeStampFromDiPa();
 			
 			pSControllUserIncom.setString(1, logFromUser);
 			resultSet = pSControllUserIncom.executeQuery();
 			
-			if(resultSet.next() == false){// если нет в базе текущих сессий выключаем канал
+			boolean checkInBase = resultSet.next();
+			if(checkInBase == false){// если нет в базе текущих сессий выключаем канал
 				closeSession();
 			}
 			
 			// иначе продолжаем проверку
 			timeStampfromDB = resultSet.getLong("timestampforsess");
-			long deltaTime = timeStampServerDialog - timeStampfromDB;
+			deltaTime = timeStampServerDialog - timeStampfromDB;
 			
 			resultSet.close();
 			pSControllUserIncom.close();
@@ -120,16 +121,21 @@ public class RunDialog implements Runnable{
 			pSSaveFirstPackInUsers.setLong(3, timeStampServerDialog);
 			pSSaveFirstPackInUsers.executeUpdate();
 			pSSaveFirstPackInUsers.close();
+			// отвечаем клиенту
+			//String log, String pass, String message, int sessionId, long timeStampFromDiPa
+			objectOutputStream.writeObject(
+				new DialogPacket(logFromUser, pasFromUser, "Talking start.", sessionidFromUser, timeStampServerDialog));
+			objectOutputStream.flush();
 			
-			// и запускаем цикл диалога читаем сообщение от клиента
+			// и запускаем цикл диалога
 			while(! socket.isClosed()){
-				
+				// читаем из канала пакет
+				DialogPacket dialogInLoop = (DialogPacket)objectInputStream.readObject();
 				//распаковываем пакет
-				DialogPacket dialogInLoop       = (DialogPacket)objectInputStream.readObject();
-				long         timeStampInSession = new java.util.Date().getTime();
-				String       logInLoop          = dialogInLoop.getLog();
-				int          sesInLoop          = dialogInLoop.getSessionId();
-				String       mesInLoop          = dialogInLoop.getMessage();
+				long   timeStampInSession = new java.util.Date().getTime();
+				String logInLoop          = dialogInLoop.getLog();
+				int    sesInLoop          = dialogInLoop.getSessionId();
+				String mesInLoop          = dialogInLoop.getMessage();
 				
 				// сохраняем пакет в базе данных в таблице истории сообщений
 				pSSaveStoryInSessions.setString(1, logInLoop);
@@ -141,7 +147,7 @@ public class RunDialog implements Runnable{
 				
 				String serverEchoReply = "server echo : " + mesInLoop;
 				//TODO дальше реализовать переговоры между юзерами на основе логинов(нужен пакет - Privat и таблица
-				// привата)
+				// привата в базе)
 				objectOutputStream.writeObject(
 					new DialogPacket(logInLoop, pasFromUser, serverEchoReply, sesInLoop, timeStampInSession));
 				objectOutputStream.flush();

@@ -1,13 +1,11 @@
 package ru.chat.serverSside;
 
-import ru.chat.markerIface.AuthPacket;
 import ru.chat.markerIface.DialogPacket;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.net.SocketException;
 import java.sql.*;
 import java.util.Date;
 
@@ -33,7 +31,6 @@ public class RunAuthorization implements Runnable{
 	private static String pasFromPacket;
 	private static int    backCodeFromDB;
 	private static int    backCode;
-	private static String passFromDB;
 	private static int    sessionIDd;
 	
 	public RunAuthorization(Socket socket){
@@ -79,9 +76,9 @@ public class RunAuthorization implements Runnable{
 		    ObjectInputStream oIStreamClient = new ObjectInputStream(socketClient.getInputStream())){
 			
 			// читаем пакет авторизации от клиента
-			AuthPacket authPacket = (AuthPacket)oIStreamClient.readObject();
+			DialogPacket authPacket = (DialogPacket)oIStreamClient.readObject();
 			//вынимаем из него логин и пароль
-			loginFromPacket = authPacket.getLoin();
+			loginFromPacket = authPacket.getLog();
 			pasFromPacket = authPacket.getPass();
 			
 			backCodeFromDB = authorization(loginFromPacket, pasFromPacket);
