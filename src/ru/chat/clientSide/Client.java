@@ -152,7 +152,7 @@ public class Client{
 			pasInClient = autorizeReader.readLine();
 
 //			autorizeReader.close();
-			// фолрмируем пакет авторизации и отправляем запрос делегату сервера для проверки возможности авторизации
+			// формируем пакет авторизации и отправляем запрос делегату сервера для проверки возможности авторизации
 			//String log, String pass, String message, int sessionId, long timeStampFromDiPa
 			System.out.println("dialog packet performing to send to RunAuthorization");
 			authPacket = new DialogPacket(loginInClient, pasInClient, "authorization", 0, 0);

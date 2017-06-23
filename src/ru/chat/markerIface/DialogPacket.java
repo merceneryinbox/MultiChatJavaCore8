@@ -10,8 +10,8 @@ public class DialogPacket implements Serializable{
 	public String log;
 	public String pass;
 	public String message;
-	public int sessionId;
-	public long timeStampFromDiPa;
+	public int    sessionId;
+	public long   timeStampFromDiPa;
 	
 	public DialogPacket(String log, String pass, String message, int sessionId, long timeStampFromDiPa){
 		
@@ -21,45 +21,4 @@ public class DialogPacket implements Serializable{
 		this.sessionId = sessionId;
 		this.timeStampFromDiPa = timeStampFromDiPa;
 	}
-//
-//	public static String getLog(){
-//		return log;
-//	}
-//
-//	public static void setLog(String log){
-//		DialogPacket.log = log;
-//	}
-//
-//	public static String getPass(){
-//		return pass;
-//	}
-//
-//	public static void setPass(String pass){
-//		DialogPacket.pass = pass;
-//	}
-//
-//	public static String getMessage(){
-//		return message;
-//	}
-//
-//	public static void setMessage(String message){
-//		DialogPacket.message = message;
-//	}
-//
-//	public static int getSessionId(){
-//		return sessionId;
-//	}
-//
-//	public static void setSessionId(int sessionId){
-//		DialogPacket.sessionId = sessionId;
-//	}
-//
-//	public static long getTimeStampFromDiPa(){
-//		return timeStampFromDiPa;
-//	}
-//
-//	public static void setTimeStampFromDiPa(long timeStampFromDiPa){
-//		DialogPacket.timeStampFromDiPa = timeStampFromDiPa;
-//	}
-
 }
