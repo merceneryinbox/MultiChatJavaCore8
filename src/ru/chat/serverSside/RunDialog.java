@@ -117,6 +117,7 @@ public class RunDialog implements Runnable{
 			}
 			
 			// иначе сохраняем первый пакет в таблицу сессий
+			System.out.println("иначе сохраняем первый пакет в таблицу сессий");
 			pSSaveFirstPackInUsers.setString(1, logFromUser);
 			pSSaveFirstPackInUsers.setInt(2, sessionidFromUser);
 			pSSaveFirstPackInUsers.setLong(3, timeStampServerDialog);
@@ -124,6 +125,7 @@ public class RunDialog implements Runnable{
 			pSSaveFirstPackInUsers.close();
 			
 			// отвечаем клиенту
+			System.out.println("отвечаем клиенту");
 			dialogPacketToUser = new DialogPacket(logFromUser, pasFromUser, "Talking start.", sessionidFromUser,
 			                                      timeStampServerDialog);
 			objectOutputStream.writeObject(dialogPacketToUser);
@@ -151,10 +153,11 @@ public class RunDialog implements Runnable{
 				//TODO дальше реализовать переговоры между юзерами на основе логинов(нужен пакет - Privat и таблица
 				// привата в базе)
 				// отвечаем клиенту
-				objectOutputStream.writeObject(
-					new DialogPacket(logInLoop, pasFromUser, serverEchoReply, sesInLoop, timeStampInSession));
-				objectOutputStream.flush();
-				
+				if(! socket.isClosed()){
+					objectOutputStream.writeObject(
+						new DialogPacket(logInLoop, pasFromUser, serverEchoReply, sesInLoop, timeStampInSession));
+					objectOutputStream.flush();
+				}
 				if(mesInLoop.equalsIgnoreCase("quit")){
 					closeSession();
 					break;

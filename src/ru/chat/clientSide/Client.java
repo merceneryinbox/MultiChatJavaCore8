@@ -39,7 +39,6 @@ public class Client{
 			untilAuthorize();
 		}
 		
-		
 		try{
 			BufferedReader talk = new BufferedReader(new InputStreamReader(System.in));
 			socketDialog = new Socket("localhost", 55555);
@@ -53,12 +52,21 @@ public class Client{
 			ooDialog.flush();
 			
 			//принимаю ответ на первый пакет и вывожу на консоль
-			if(oiDialog.available() != 0){
-				dialogPacketInSessionFromServer = (DialogPacket)oiDialog.readObject();
-				reply = dialogPacketInSessionFromServer.message;
-				System.out.println(reply);
+			System.out.println("принимаю ответ на первый пакет и вывожу на консоль");
+
+			dialogPacketInSessionFromServer = (DialogPacket)oiDialog.readObject();
+			reply = dialogPacketInSessionFromServer.message;
+			System.out.println("Server replyed" + reply);
+			
+			System.out.println("проверяю сообщение в ответе на ключевое слово - quit");
+			if(reply.equalsIgnoreCase("quit")){
+				ooDialog.close();
+				oiDialog.close();
+				socketDialog.close();
 			}
 			//запускаю основной цикл общения
+			System.out.println("ключевое слово при рукопожатии клиента и диалогового сервера не найдено, запускаю "
+			                   + "основной цикл общения");
 			while(! socketDialog.isClosed()){
 				
 				System.out.println("input your message");
@@ -68,22 +76,38 @@ public class Client{
 				ooDialog.writeObject(dialogPacketInSessionFromUser);
 				ooDialog.flush();
 				
+				System.out.println("Проверяю сообщение клиента на совпадение с ключевым словом - quit");
 				if(message.equalsIgnoreCase("quit")){
+					System.out.println("ключевое слово найдено, закрываю соединение");
 					if(oiDialog.available() != 0){
 						dialogPacketInSessionFromServer = (DialogPacket)oiDialog.readObject();
 						reply = dialogPacketInSessionFromServer.message;
+						System.out.println("печатаю эхо ответ сервера");
+						System.out.println("Server replyed" + reply);
 					}
+					ooDialog.close();
+					oiDialog.close();
+					socketDialog.close();
+					break;
+				}
+				System.out.println("Слушаю канал , жду пакета от сервера");
+				dialogPacketInSessionFromServer = (DialogPacket)oiDialog.readObject();
+				reply = dialogPacketInSessionFromServer.message;
+				
+				System.out.println("Проверяю сообщение сервера на совпадение с ключевым словом - quit");
+				
+				if(reply.equalsIgnoreCase("quit")){
+					System.out.println("ключевое слово найдено в пакете сервера, закрываю соединение");
 					System.out.println("Server replyed" + reply);
 					ooDialog.close();
 					oiDialog.close();
 					socketDialog.close();
 					break;
 				}
-//				if(oiDialog.available() != 0){
-					dialogPacketInSessionFromServer = (DialogPacket)oiDialog.readObject();
-					reply = dialogPacketInSessionFromServer.message;
-					System.out.println(reply);
-//				}
+				
+				
+				System.out.println("ключевое слово не найдено, печатаю эхо ответ сервера");
+				System.out.println(reply);
 			}
 		} catch(UnknownHostException e) {
 			e.printStackTrace();
