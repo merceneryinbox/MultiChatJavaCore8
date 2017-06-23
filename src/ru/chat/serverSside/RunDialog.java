@@ -25,6 +25,7 @@ public class RunDialog implements Runnable{
 	private static long         timeStampServerDialog;
 	private static long         deltaTime;
 	private static DialogPacket dialogPacket;
+	private static DialogPacket dialogPacketToUser;
 	private static String       messageFromUser;
 	private static String       logFromUser;
 	private static String       pasFromUser;
@@ -101,7 +102,7 @@ public class RunDialog implements Runnable{
 			resultSet.close();
 			pSControllUserIncom.close();
 			
-			//  выключаем канал если сессия устарела после записи о попытке
+			//  выключаем канал если сессия устарела после записи о неудачной попытке в таблицу illegalattempt
 			if(deltaTime > 60000){
 				
 				psSIlligalAttempt.setString(1, logFromUser);
@@ -121,10 +122,11 @@ public class RunDialog implements Runnable{
 			pSSaveFirstPackInUsers.setLong(3, timeStampServerDialog);
 			pSSaveFirstPackInUsers.executeUpdate();
 			pSSaveFirstPackInUsers.close();
+			
 			// отвечаем клиенту
-			//String log, String pass, String message, int sessionId, long timeStampFromDiPa
-			objectOutputStream.writeObject(
-				new DialogPacket(logFromUser, pasFromUser, "Talking start.", sessionidFromUser, timeStampServerDialog));
+			dialogPacketToUser = new DialogPacket(logFromUser, pasFromUser, "Talking start.", sessionidFromUser,
+			                                      timeStampServerDialog);
+			objectOutputStream.writeObject(dialogPacketToUser);
 			objectOutputStream.flush();
 			
 			// и запускаем цикл диалога
@@ -148,6 +150,7 @@ public class RunDialog implements Runnable{
 				String serverEchoReply = "server echo : " + mesInLoop;
 				//TODO дальше реализовать переговоры между юзерами на основе логинов(нужен пакет - Privat и таблица
 				// привата в базе)
+				// отвечаем клиенту
 				objectOutputStream.writeObject(
 					new DialogPacket(logInLoop, pasFromUser, serverEchoReply, sesInLoop, timeStampInSession));
 				objectOutputStream.flush();
