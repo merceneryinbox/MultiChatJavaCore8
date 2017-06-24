@@ -71,6 +71,7 @@ public class Client{
 				socketDialog.close();
 			}
 			//запускаю основной цикл общения
+			System.out.println("KeyWord - quit not received, closing my resources");
 			System.out.println("Closing KeyWord not found, main while loop for talking with RunDialog starts");
 			while(! socketDialog.isClosed()){
 				
@@ -86,13 +87,11 @@ public class Client{
 				System.out.println("Checking for - quit keyword");
 				if(message.equalsIgnoreCase("quit")){
 					System.out.println("Keyword - quit found, close resources");
-					if(oiDialog.available() != 0){
-						System.out.println("Looking up for last send from RunDialog message if exists");
-						dialogPacketInSessionFromServer = (DialogPacket)oiDialog.readObject();
-						reply = dialogPacketInSessionFromServer.message;
-						System.out.println("Printing last echoreply");
-						System.out.println("Server replyed" + reply);
-					}
+					System.out.println("Looking up for last send from RunDialog message if exists");
+					dialogPacketInSessionFromServer = (DialogPacket)oiDialog.readObject();
+					reply = dialogPacketInSessionFromServer.message;
+					System.out.println("Printing last echoreply");
+					System.out.println("Server replyed - " + reply);
 					System.out.println("Closing resources, breaking main while loop");
 					ooDialog.close();
 					oiDialog.close();

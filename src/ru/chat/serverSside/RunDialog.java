@@ -163,6 +163,7 @@ public class RunDialog implements Runnable{
 				pSSaveStoryInSessions.setLong(4, timeStampInSession);
 				
 				pSSaveStoryInSessions.executeUpdate();
+				System.out.println("Client sais: " +mesInLoop);
 				System.out.println("Try to echo to connected client if socket is alive");
 				String serverEchoReply = "server echo : " + mesInLoop;
 				//TODO дальше реализовать переговоры между юзерами на основе логинов(нужен пакет - Privat и таблица
